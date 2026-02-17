@@ -1,0 +1,22 @@
+{
+  "builds": [
+    {
+      "src": "site/index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "src/index.html", 
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/site/index.html"
+    },
+    {
+      "src": "/lite",
+      "dest": "/src/index.html"
+    }
+  ]
+}
