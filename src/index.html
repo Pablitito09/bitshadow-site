@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitShadow - Suite de Segurança</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .lite-blur { filter: blur(8px) grayscale(100%); pointer-events: none; }
+        .lite-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); z-index: 20; }
+        .locked-feature { opacity: 0.5; pointer-events: none; position: relative; }
+        .lock-badge { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: 8px; }
+        .fade-transition { transition: opacity 0.3s ease; }
+    </style>
+</head>
+<body class="bg-[#0B0F19] text-white overflow-x-hidden min-h-screen flex flex-col">
+
+    <nav class="fixed w-full z-50 bg-[#0B0F19]/90 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center gap-2">
+                    <div class="bg-gradient-to-br from-purple-600 to-blue-600 p-2 rounded-lg">
+                        <i data-lucide="shield" class="h-6 w-6 text-white"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight">BitShadow <span class="text-gray-500 text-sm align-top ml-1">Web Lite</span></span>
+                </div>
+                <div>
+                    <!-- Substituir LINK aqui -->
+                    <a href="https://www.dropbox.com/scl/fi/8qhpjb9idjvdv477r01mr/BitShadow-Pro-Setup-2.0.0.exe?rlkey=ieu9jycemk0xiy3x63h5y1alv&st=7dgg4grx&dl=1" class="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg font-bold transition-all shadow-lg shadow-purple-900/20">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Obter Versão PRO</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex-grow pt-24 pb-12 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="glass-panel rounded-3xl overflow-hidden shadow-2xl border border-white/10 relative">
+                <div class="bg-black/20 p-6 border-b border-white/10 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold flex items-center gap-3"><i data-lucide="cpu" class="text-blue-400"></i> Motor Esteganográfico</h2>
+                        <p class="text-gray-400 text-sm mt-1">Modo Web (Limitado)</p>
+                    </div>
+                    <div class="flex bg-black/40 p-1 rounded-lg border border-white/10">
+                        <button onclick="setMode('encode')" id="btn-encode" class="px-6 py-2 rounded-md text-sm font-semibold bg-blue-600 text-white shadow-lg">Codificar</button>
+                        <div class="relative">
+                            <button onclick="setMode('decode')" id="btn-decode" class="px-6 py-2 rounded-md text-sm font-semibold text-gray-400">Descodificar</button>
+                            <div class="absolute -top-2 -right-2 bg-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold shadow-lg">PRO</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-0">
+                    <!-- Left Panel -->
+                    <div class="lg:col-span-4 bg-black/10 p-8 border-r border-white/10 space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-500 uppercase">1. Imagem</label>
+                            <div class="relative group cursor-pointer">
+                                <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleImage(event)">
+                                <div class="bg-white/5 border-2 border-dashed border-white/20 rounded-xl p-8 text-center group-hover:border-blue-500/50 transition-all">
+                                    <i data-lucide="image-plus" class="w-8 h-8 mx-auto text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-300" id="fileName">Arrastar ou Clicar</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Password com Olho -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-500 uppercase">2. Chave AES-256</label>
+                            <div class="relative">
+                                <input type="password" id="passInput" placeholder="Password..." class="w-full bg-black/20 border border-white/10 rounded-lg p-3 pr-10 text-white outline-none">
+                                <button onclick="togglePass()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors focus:outline-none">
+                                    <i id="passIcon" data-lucide="eye" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 pt-4 border-t border-white/10 relative">
+                            <label class="text-xs font-bold text-gray-500 uppercase">3. Densidade</label>
+                            <input type="range" disabled value="1" class="w-full h-2 bg-gray-700 rounded-lg">
+                            <div class="lock-badge"><i data-lucide="lock" class="w-4 h-4 mr-1 text-gray-400"></i> <span class="text-xs font-bold">PRO Feature</span></div>
+                        </div>
+                        <button onclick="process()" id="actionBtn" disabled class="w-full py-4 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-all text-white shadow-lg mt-4">Processar Imagem</button>
+                        <div id="statusMsg" class="hidden text-center text-sm p-2 rounded bg-white/5 border border-white/10"></div>
+                    </div>
+
+                    <!-- Right Panel -->
+                    <div class="lg:col-span-8 p-8 bg-[#0B0F19]/50 flex flex-col">
+                        <div id="encodeArea" class="flex-grow flex flex-col space-y-2">
+                            <label class="text-xs font-bold text-gray-500 uppercase flex justify-between">
+                                Mensagem Secreta
+                                <span id="capacityLabel" class="text-gray-600">0 / 100</span>
+                            </label>
+                            <textarea id="msgInput" maxlength="100" oninput="updateCount(this)" class="w-full h-40 bg-black/20 border border-white/10 rounded-xl p-4 text-white font-mono resize-none outline-none" placeholder="Versão Lite limitada a 100 caracteres..."></textarea>
+                        </div>
+
+                        <!-- Decode Bloqueado Overlay -->
+                        <div id="decodeArea" class="hidden flex-grow space-y-2 relative">
+                            <label class="text-xs font-bold text-green-500 uppercase">Resultado</label>
+                            <div class="w-full h-40 bg-green-900/10 border border-green-500/20 rounded-xl"></div>
+                            <div class="absolute inset-0 top-6 bg-black/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center rounded-xl border border-white/10">
+                                <i data-lucide="shield-alert" class="w-8 h-8 text-red-500 mb-2"></i>
+                                <span class="text-sm font-bold text-white uppercase">Recurso Bloqueado</span>
+                                <a href="https://www.dropbox.com/scl/fi/8qhpjb9idjvdv477r01mr/BitShadow-Pro-Setup-2.0.0.exe?rlkey=ieu9jycemk0xiy3x63h5y1alv&st=7dgg4grx&dl=1" class="bg-white text-black px-4 py-2 rounded font-bold text-xs mt-2 hover:bg-gray-200">Baixar App</a>
+                            </div>
+                        </div>
+
+                        <!-- Secção Imagens -->
+                        <div id="previewSection" class="mt-8 grid grid-cols-2 gap-4 h-64 fade-transition">
+                            <div class="bg-black/30 rounded-xl border border-white/5 flex items-center justify-center overflow-hidden relative">
+                                <p class="absolute text-xs text-gray-600 font-bold uppercase top-2 left-2 z-10">Original</p>
+                                <img id="previewOriginal" class="max-w-full max-h-full object-contain hidden lite-blur">
+                                <div class="lite-overlay"><i data-lucide="eye-off" class="text-gray-400 w-6 h-6"></i><span class="text-[10px] text-gray-300 font-bold mt-1 uppercase">Visualização Limitada</span></div>
+                            </div>
+                            <div class="bg-black/30 rounded-xl border border-blue-500/10 flex items-center justify-center overflow-hidden relative">
+                                <p class="absolute text-xs text-blue-500 font-bold uppercase top-2 left-2 z-10">Final</p>
+                                <img id="previewResult" class="max-w-full max-h-full object-contain hidden lite-blur">
+                                <div class="lite-overlay"><i data-lucide="eye-off" class="text-gray-400 w-6 h-6"></i><span class="text-[10px] text-gray-300 font-bold mt-1 uppercase">Visualização Limitada</span></div>
+                                <a id="dlBtn" class="hidden absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold gap-2 hover:bg-black/70 transition-all z-30" download="segredo_lite.png"><i data-lucide="download"></i> Salvar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 text-center"><p class="text-gray-500 text-sm">Versão Lite (100 chars). <a href="https://www.dropbox.com/scl/fi/8qhpjb9idjvdv477r01mr/BitShadow-Pro-Setup-2.0.0.exe?rlkey=ieu9jycemk0xiy3x63h5y1alv&st=7dgg4grx&dl=1" class="text-blue-400 hover:text-blue-300 underline">Baixa a App Desktop</a> para desbloquear tudo.</p></div>
+        </div>
+    </div>
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <script>
+        lucide.createIcons();
+        let img = new Image();
+        let mode = 'encode';
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMsg');
+            el.innerText = msg;
+            el.classList.remove('hidden', 'bg-green-900/20', 'text-green-400', 'border-green-500/30', 'bg-red-900/20', 'text-red-400', 'border-red-500/30', 'bg-yellow-900/20', 'text-yellow-400', 'border-yellow-500/30');
+            if(type === 'success') el.classList.add('bg-green-900/20', 'text-green-400', 'border-green-500/30');
+            else if(type === 'error') el.classList.add('bg-red-900/20', 'text-red-400', 'border-red-500/30');
+            else el.classList.add('bg-yellow-900/20', 'text-yellow-400', 'border-yellow-500/30');
+        }
+
+        function togglePass() {
+            const inp = document.getElementById('passInput');
+            const icon = document.getElementById('passIcon');
+            if (inp.type === "password") { inp.type = "text"; icon.setAttribute('data-lucide', 'eye-off'); }
+            else { inp.type = "password"; icon.setAttribute('data-lucide', 'eye'); }
+            lucide.createIcons();
+        }
+
+        function updateCount(el) {
+            document.getElementById('capacityLabel').innerText = `${el.value.length} / 100`;
+            if(el.value.length >= 100) document.getElementById('capacityLabel').classList.add('text-red-500');
+            else document.getElementById('capacityLabel').classList.remove('text-red-500');
+        }
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('passInput').value = '';
+            document.getElementById('msgInput').value = '';
+            document.getElementById('capacityLabel').innerText = '0 / 100';
+            document.getElementById('capacityLabel').classList.remove('text-red-500');
+            document.getElementById('statusMsg').classList.add('hidden');
+            
+            img = new Image();
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileName').innerText = 'Arrastar ou Clicar';
+            document.getElementById('previewOriginal').src = '';
+            document.getElementById('previewOriginal').classList.add('hidden');
+            document.getElementById('previewResult').src = '';
+            document.getElementById('previewResult').classList.add('hidden');
+            document.getElementById('dlBtn').classList.add('hidden');
+            document.getElementById('actionBtn').disabled = true;
+
+            document.getElementById('encodeArea').classList.toggle('hidden', m !== 'encode');
+            document.getElementById('decodeArea').classList.toggle('hidden', m === 'encode');
+            
+            document.getElementById('btn-encode').className = m === 'encode' ? 'px-6 py-2 rounded-md text-sm font-semibold bg-blue-600 text-white shadow-lg' : 'px-6 py-2 rounded-md text-sm font-semibold text-gray-400';
+            document.getElementById('btn-decode').className = m === 'decode' ? 'px-6 py-2 rounded-md text-sm font-semibold bg-blue-600 text-white shadow-lg' : 'px-6 py-2 rounded-md text-sm font-semibold text-gray-400';
+            document.getElementById('actionBtn').innerText = m === 'encode' ? "Processar Imagem" : "Descodificar";
+            
+            const previewSection = document.getElementById('previewSection');
+            if (m === 'decode') {
+                previewSection.classList.add('hidden');
+                document.getElementById('actionBtn').disabled = true; 
+            } else {
+                previewSection.classList.remove('hidden');
+            }
+        }
+
+        function handleImage(e) {
+            const file = e.target.files[0];
+            if(file) {
+                document.getElementById('fileName').innerText = file.name;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    img.onload = () => {
+                        if(mode === 'encode') {
+                            document.getElementById('previewOriginal').src = img.src;
+                            document.getElementById('previewOriginal').classList.remove('hidden');
+                            document.getElementById('actionBtn').disabled = false;
+                        }
+                        document.getElementById('previewResult').classList.add('hidden');
+                        document.getElementById('dlBtn').classList.add('hidden');
+                        document.getElementById('statusMsg').classList.add('hidden');
+                    }
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function textToBin(text) { return text.split('').map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join(''); }
+
+        function process() {
+            if(mode === 'decode') return; 
+
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width; canvas.height = img.height;
+            ctx.drawImage(img,0,0);
+            const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+            const data = imgData.data;
+            const password = document.getElementById('passInput').value;
+            const msg = document.getElementById('msgInput').value;
+            
+            if(!msg || !password) { showStatus("⚠️ Erro: Preencha mensagem e password!", "warning"); return; }
+
+            const encrypted = CryptoJS.AES.encrypt(msg, password).toString();
+            const binMsg = textToBin(encrypted);
+            const len = binMsg.length.toString(2).padStart(32, '0');
+            const fullBin = len + binMsg;
+
+            let idx = 0;
+            const bits = 1; 
+            for(let i=0; i<data.length; i++) {
+                if((i+1)%4===0) continue;
+                if(idx < fullBin.length) {
+                    data[i] = (data[i] & ~((1<<bits)-1)) | parseInt(fullBin.substr(idx, bits).padEnd(bits,'0'), 2);
+                    idx += bits;
+                } else break;
+            }
+            ctx.putImageData(imgData,0,0);
+            const res = canvas.toDataURL('image/png');
+            document.getElementById('previewResult').src = res;
+            document.getElementById('previewResult').classList.remove('hidden');
+            const dl = document.getElementById('dlBtn'); dl.href = res; dl.classList.remove('hidden');
+            
+            showStatus("✅ Codificado (Lite Mode)", "success");
+        }
+        
+        // Inicializar
+        setMode('encode');
+    </script>
+</body>
+</html>

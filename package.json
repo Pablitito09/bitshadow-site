@@ -1,0 +1,21 @@
+{
+  "name": "bitshadow-pro",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --publish never",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:linux": "electron-builder --linux --publish never",
+    "build:all": "electron-builder -mwl --publish never"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.13.3"
+  },
+  "description": "Ferramenta Profissional de Esteganografia AES-256",
+  "main": "main.js",
+  "author": "Tomás Gaspar 2024164 - ISTEC",
+  "license": "ISC"
+}
